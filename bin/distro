@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if exists lsb_release; then
+    lsb_release ${1:--ds}
+elif [ -r /etc/issue ]; then
+    cat /etc/issue
+else
+    uname -r
+fi
