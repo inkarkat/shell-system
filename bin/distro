@@ -2,6 +2,8 @@
 
 if exists lsb_release; then
     lsb_release ${1:--ds}
+elif [ -r /etc/redhat-release ]; then
+    cat /etc/redhat-release
 elif [ -r /etc/issue ]; then
     cat /etc/issue
 else
