@@ -1,0 +1,17 @@
+#!/bin/sh
+
+printUsage()
+{
+    cat <<HELPTEXT
+Query and set the auto-mounting of USB sticks etc. in Gnome Nautilus.
+Usage: "$(basename "$1")" [on|off] [-?|-h|--help]
+HELPTEXT
+}
+
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    off)		gsettings set org.gnome.desktop.media-handling automount false;;
+    on)			gsettings set org.gnome.desktop.media-handling automount true;;
+    '')			gsettings get org.gnome.desktop.media-handling automount;;
+    *)			printUsage "$0"; exit 2;;
+esac
