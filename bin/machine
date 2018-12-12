@@ -1,0 +1,4 @@
+#!/bin/bash
+
+machineId="$(< /etc/machine-id)"    # TODO: Implement fallback, e.g. installation date?
+printf '%s-%s\n' "${HOSTNAME:-unknown}" "$machineId"
