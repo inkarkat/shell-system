@@ -1,0 +1,4 @@
+#!/bin/bash
+set -o pipefail
+
+acpi --battery | sed -e 's/^.*[[:space:]]\([0-9]\+%\).*$/\1/'
