@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 printUsage()
 {
     cat <<HELPTEXT
 Query and set the auto-mounting of USB sticks etc. in Gnome Nautilus.
-Usage: "$(basename "$1")" [on|off] [-?|-h|--help]
 HELPTEXT
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[on|off] [-?|-h|--help]'
 }
 
 case "$1" in
