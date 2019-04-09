@@ -13,5 +13,5 @@ case "$1" in
     off)		gsettings set org.gnome.desktop.media-handling automount false;;
     on)			gsettings set org.gnome.desktop.media-handling automount true;;
     '')			gsettings get org.gnome.desktop.media-handling automount;;
-    *)			printUsage "$0"; exit 2;;
+    *)			printUsage "$0" >&2; exit 2;;
 esac
