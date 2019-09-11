@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sudo dmidecode | sed -ne '/^System Information$/,/^$/{ s/^[ \t]*Product Name: \(.*\)$/\1/p }'
+exec systeminfo "Product Name"
