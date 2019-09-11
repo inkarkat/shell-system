@@ -1,0 +1,17 @@
+#!/bin/bash
+
+typeset -a filter=()
+typeset -a filterArgs=()
+includeKey='&'; [ $# -eq 1 ] && includeKey=''
+for arg
+do
+    filter=(sed -n)
+    filterArgs+=(-e "s/^${arg}: /${includeKey}/p")
+done
+
+printSystemInfoBlock()
+{
+    sudo dmidecode | sed -ne '/^System Information$/,/^$/{ /^System Information$\|^$/d; s/^[ \t]*//p }'
+}
+
+eval 'printSystemInfoBlock' "${filter:+|}" '"${filter[@]}" "${filterArgs[@]}"'
