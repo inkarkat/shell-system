@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if type -t iwconfig >/dev/null; then
+    LC_ALL=C iwconfig 2>/dev/null | grep --fixed-strings 'Link Quality'
+elif [ -r /proc/net/wireless ]; then
+    # Source: https://askubuntu.com/a/440149/72217
+    awk 'NR==3 {printf("WiFi Signal Strength = %.0f%%\n",$3*10/7)}' /proc/net/wireless
+else
+    exit 3
+fi
