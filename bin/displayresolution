@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Source: https://askubuntu.com/a/584692/72217
+readonly pythonHeader='
+from gi import require_version
+require_version("Gdk", "3.0")
+from gi.repository import Gdk
+screen=Gdk.Screen.get_default()
+'
+readonly pythonPrimary="$pythonHeader"'
+geo = screen.get_monitor_geometry(screen.get_primary_monitor())
+print(geo.width, " ", geo.height)
+'
+readonly pythonAll="$pythonHeader"'
+print(screen.get_width(), " ", screen.get_height())
+'
+
+printUsage()
+{
+    cat <<HELPTEXT
+Get the display resolution of the entire (multi-monitor) display / the primary
+display.
+HELPTEXT
+    echo
+    printf "Usage: < <(%q %s) IFS=' ' read -r xres yres\\n" "$(basename "$1")" '[--primary] [-?|-h|--help]'
+}
+pythonProgram="$pythonAll"
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --primary)		shift; pythonProgram="$pythonPrimary";;
+esac
+exec python3 -c "$pythonProgram"
