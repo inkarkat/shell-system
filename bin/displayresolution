@@ -5,13 +5,14 @@ readonly pythonHeader='
 from gi import require_version
 require_version("Gdk", "3.0")
 from gi.repository import Gdk
-screen=Gdk.Screen.get_default()
 '
 readonly pythonPrimary="$pythonHeader"'
-geo = screen.get_monitor_geometry(screen.get_primary_monitor())
+display = Gdk.Display.get_default()
+geo = display.get_primary_monitor().get_geometry()
 print(geo.width, " ", geo.height)
 '
 readonly pythonAll="$pythonHeader"'
+screen = Gdk.Screen.get_default()
 print(screen.get_width(), " ", screen.get_height())
 '
 
