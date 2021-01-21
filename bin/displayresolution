@@ -11,8 +11,14 @@ require_version("Gdk", "3.0")
 from gi.repository import Gdk
 '
 readonly pythonPrimary="$pythonHeader"'
-display = Gdk.Display.get_default()
-geo = display.get_primary_monitor().get_geometry()
+require_version("Gtk", "3.0")
+from gi.repository import Gtk
+if Gtk.get_major_version() == 3 and Gtk.get_minor_version() >= 22:
+    display = Gdk.Display.get_default()
+    geo = display.get_primary_monitor().get_geometry()
+else:
+    screen=Gdk.Screen.get_default()
+    geo = screen.get_monitor_geometry(screen.get_primary_monitor())
 print(geo.width, " ", geo.height)
 '
 readonly pythonEach="$pythonHeader"'
