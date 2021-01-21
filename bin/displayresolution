@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Without a DISPLAY, we just get "Unable to init server: Could not connect:
+# Connection refused".
+[ -n "$DISPLAY" ] || export DISPLAY="$(getDefaultDisplay 2>/dev/null)"
+
 # Source: https://askubuntu.com/a/584692/72217
 readonly pythonHeader='
 from gi import require_version
