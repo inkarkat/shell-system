@@ -1,0 +1,4 @@
+#!/bin/bash
+set -o pipefail
+
+LC_ALL=C lscpu | sed -n -e 's/^Model name:[[:space:]]*\(.*\)$/\1/p'
