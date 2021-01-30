@@ -4,6 +4,9 @@ set -o pipefail
 : ${SOMETHINGBENCHMARK_SUBJECT_NAME:?}
 : ${SOMETHINGBENCHMARK_SUBJECT_UNIT:?}
 : ${SOMETHINGBENCHMARK_RECORD_FILESPEC:?}
+: ${SOMETHINGBENCHMARK_KEY_COMMAND:=readableHostname}
+: ${SOMETHINGBENCHMARK_KEY_NAME:=hostname}
+: ${SOMETHINGBENCHMARK_KEY_OVERRIDE=HOSTNAME}
 : ${SOMETHINGBENCHMARK_CONTEXT_NAME:=distro}
 : ${SOMETHINGBENCHMARK_CONTEXT_COMMAND:=distro}
 : ${SOMETHINGBENCHMARK_SYSTEM_NAME:=system info}
@@ -18,7 +21,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: [HOSTNAME=...] %q %s\n' "$(basename "$1")" '[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record] [-?|-h|--help]'
+    printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" '[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record] [-?|-h|--help]'
 }
 printUsage()
 {
@@ -80,17 +83,18 @@ runBenchmarks()
 
 database()
 {
+    local key="${SOMETHINGBENCHMARK_KEY_NAME// /_}"
     local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT// /_}"
     local context="${SOMETHINGBENCHMARK_CONTEXT_NAME// /_}"
     local system="${SOMETHINGBENCHMARK_SYSTEM_NAME// /_}"
 
-    miniDB --basedir "$recordDirspec" --schema "HOSTNAME ${unit^^} DATE ${context^^} ${system^^}" --table "$recordFilename" "$@"
+    miniDB --basedir "$recordDirspec" --schema "${key^^} ${unit^^} DATE ${context^^} ${system^^}" --table "$recordFilename" "$@"
 }
 
 makeRecord()
 {
     local result="${1:?}"; shift
-    printf '%s\t%s\t%s\t%s\t%s\n' "$(readableHostname)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$($SOMETHINGBENCHMARK_KEY_COMMAND)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
 }
 
 typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS); [ -t 1 ] || pager=()
