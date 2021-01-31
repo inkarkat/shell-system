@@ -103,10 +103,10 @@ runBenchmarks()
 
 database()
 {
-    local key="${SOMETHINGBENCHMARK_KEY_NAME// /_}"
-    local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT// /_}"
-    local context="${SOMETHINGBENCHMARK_CONTEXT_NAME// /_}"
-    local system="${SOMETHINGBENCHMARK_SYSTEM_NAME// /_}"
+    local key="${SOMETHINGBENCHMARK_KEY_NAME//[^0-9A-Za-z]/_}"
+    local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^0-9A-Za-z]/_}"
+    local context="${SOMETHINGBENCHMARK_CONTEXT_NAME//[^0-9A-Za-z]/_}"
+    local system="${SOMETHINGBENCHMARK_SYSTEM_NAME//[^0-9A-Za-z]/_}"
 
     miniDB --basedir "$recordDirspec" --schema "${key^^} ${unit^^} DATE ${context^^} ${system^^}" --table "$recordFilename" "$@"
 }
