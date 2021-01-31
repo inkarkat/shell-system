@@ -22,6 +22,8 @@ printShortUsage()
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
     printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" '[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record|-I|--record-to-inbox] [-?|-h|--help]'
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE'
 }
 printUsage()
 {
@@ -50,9 +52,13 @@ HELPDESCRIPTION
     --record-to-inbox|-I
 			Store the result in the inbox location (so that it can
 			be incorporated into the records via --merge-record).
+    --merge-record|-M RECORD-FILE
+			Incorporate benchmark results from RECORD-FILE for
+			future comparisons.
 HELPTEXT
 }
 
+mergeRecordFilespec=
 count=1
 typeset -a averageCommand=()
 typeset -a verboseCommand=()
@@ -69,6 +75,8 @@ do
 	--record|-R)	shift; isRecord=t;;
 	--record-to-inbox|-I)
 			shift; isRecord=t; isRecordToInbox=t;;
+	--merge-record|-M)
+			shift; mergeRecordFilespec="${1:?}"; shift;;
 	--)		shift; break;;
 	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
 	*)		break;;
@@ -128,6 +136,25 @@ recordBenchmark()
 	database --update "$record"
     fi
 }
+
+if [ -n "$mergeRecordFilespec" ]; then
+    typeset -a records=()
+    readarray -t records < "$mergeRecordFilespec" || exit $?
+
+    local status=0
+    local record; for record in "${records[@]}"
+    do
+	database --update "$record" && \
+	    printf 'Added/updated record for %s.\n' "${record%%$'\t'*}" || \
+	    status=$?
+    done
+
+    if [ $status -eq 0 ] && offerTo "Delete $(basename -- "$mergeRecordFilespec") after successful merge?"; then
+	rm --force -- "$mergeRecordFilespec" || status=$?
+    fi
+
+    exit $status
+fi
 
 result=$(eval 'runBenchmarks' "${averageCommand:+|}" '"${averageCommand[@]}"') || exit $?
 
