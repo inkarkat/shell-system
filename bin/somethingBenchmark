@@ -14,6 +14,12 @@ set -o pipefail
 : ${SOMETHINGBENCHMARK_CURRENT_PREFIX=[07m}
 : ${SOMETHINGBENCHMARK_CURRENT_SUFFIX=[0m}
 
+# Clients have to implement:
+#benchmarkRound()
+#{
+#   echo 42
+#}
+
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
 readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
 
