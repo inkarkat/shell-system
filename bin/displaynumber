@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+from gi import require_version
+from gi.repository import Gdk
+require_version("Gdk", "3.0")
+print(Gdk.Display.get_default().get_n_monitors())
