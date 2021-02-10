@@ -61,7 +61,15 @@ HELPTEXT
 pythonProgram="$pythonAll"
 case "$1" in
     --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
-    --primary)		shift; pythonProgram="$pythonPrimary";;
+    --primary)		shift
+			if [[ "$INIT_DISPLAYSIZE" =~ ^[[:digit:]]+x[[:digit:]]+$ ]]; then
+			    # Prefer externally (i.e. through SSH client) passed
+			    # client display size.
+			    printf '%s\n' "${INIT_DISPLAYSIZE//x/ }"
+			    exit 0
+			fi
+			pythonProgram="$pythonPrimary"
+			;;
     --each)		shift; pythonProgram="$pythonEach";;
 esac
 exec python3 -c "$pythonProgram"
