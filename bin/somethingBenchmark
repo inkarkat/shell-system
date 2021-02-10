@@ -149,8 +149,8 @@ if [ -n "$mergeRecordFilespec" ]; then
     typeset -a records=()
     readarray -t records < "$mergeRecordFilespec" || exit $?
 
-    local status=0
-    local record; for record in "${records[@]}"
+    status=0
+    for record in "${records[@]}"
     do
 	database --update "$record" && \
 	    printf 'Added/updated record for %s.\n' "${record%%$'\t'*}" || \
