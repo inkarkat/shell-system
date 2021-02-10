@@ -1,5 +1,6 @@
 #!/bin/bash source-this-script
 set -o pipefail
+shopt -qs nullglob
 
 : ${SOMETHINGBENCHMARK_SUBJECT_NAME:?}
 : ${SOMETHINGBENCHMARK_SUBJECT_UNIT:?}
@@ -22,6 +23,9 @@ set -o pipefail
 
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
 readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
+readonly inboxDirspec=~/public/inbox
+readonly inboxFilenameBase="$(basename -- "$0")"
+readonly inboxFilespecPrefix="${inboxDirspec}/${inboxFilenameBase}_"
 
 printShortUsage()
 {
@@ -29,7 +33,7 @@ printShortUsage()
     # skim the long one.
     printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" '[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record|-I|--record-to-inbox] [-?|-h|--help]'
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
 }
 printUsage()
 {
@@ -61,6 +65,9 @@ HELPDESCRIPTION
     --merge-record|-M RECORD-FILE [FILE2 ...]
 			Incorporate benchmark results from RECORD-FILE(s) for
 			future comparisons.
+    --merge-inbox-records
+			Incorporate all benchmark results found in the local
+			inbox location.
 HELPTEXT
 }
 
@@ -94,6 +101,8 @@ do
 			set --
 			break
 			;;
+	--merge-inbox-records)
+			shift; action=mergeInboxRecords;;
 	--)		shift; break;;
 	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
 	*)		break;;
@@ -149,7 +158,7 @@ recordBenchmark()
     local result="${1:?}"; shift
     local record="$(makeRecord "$result")"
     if [ "$isRecordToInbox" ]; then
-	printf '%s\n' "$record" | inbox --base "$(basename -- "$0")"
+	printf '%s\n' "$record" | inbox --base "$inboxFilenameBase"
     else
 	database --update "$record"
     fi
@@ -178,6 +187,20 @@ merge()
     done
 
     return $status
+}
+
+mergeInboxRecords()
+{
+    if [ ! -d "$inboxDirspec" ]; then
+	printf >&2 'ERROR: No local inbox at %s.\n' "$inboxDirspec"
+	exit 1
+    fi
+    typeset -a mergeRecordFilespecs=("$inboxFilespecPrefix"*)
+    if [ ${#mergeRecordFilespecs[@]} -eq 0 ]; then
+	echo >&2 'ERROR: No records found in local inbox.'
+	exit 1
+    fi
+    merge
 }
 
 benchmark()
