@@ -157,7 +157,7 @@ if [ -n "$mergeRecordFilespec" ]; then
 	    status=$?
     done
 
-    if [ $status -eq 0 ] && offerTo "Delete $(basename -- "$mergeRecordFilespec") after successful merge?"; then
+    if [ $status -eq 0 ] && [ -f "$mergeRecordFilespec" ] && offerTo "Delete $(basename -- "$mergeRecordFilespec") after successful merge?"; then
 	rm --force -- "$mergeRecordFilespec" || status=$?
     fi
 
