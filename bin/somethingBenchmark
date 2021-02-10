@@ -64,6 +64,7 @@ HELPDESCRIPTION
 HELPTEXT
 }
 
+action=benchmark
 typeset -a mergeRecordFilespecs=()
 count=1
 typeset -a averageCommand=()
@@ -88,6 +89,7 @@ do
 			    printUsage >&2 "$0"
 			    exit 2
 			fi
+			action=merge
 			mergeRecordFilespecs=("$@")
 			set --
 			break
@@ -153,13 +155,16 @@ recordBenchmark()
     fi
 }
 
-if [ ${#mergeRecordFilespecs[@]} -gt 0 ]; then
-    status=0
+merge()
+{
+    local status=0
+    local mergeRecordFilespec
     for mergeRecordFilespec in "${mergeRecordFilespecs[@]}"
     do
 	typeset -a records=()
 	readarray -t records < "$mergeRecordFilespec" || exit $?
 
+	local record
 	for record in "${records[@]}"
 	do
 	    database --update "$record" && \
@@ -172,13 +177,19 @@ if [ ${#mergeRecordFilespecs[@]} -gt 0 ]; then
 	fi
     done
 
-    exit $status
-fi
+    return $status
+}
 
-result=$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"') || exit $?
+benchmark()
+{
+    local result
+    result=$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"') || return $?
 
-status=0
-[ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
-[ ! "$isRecord" ] || recordBenchmark "$result" || status=$?
-[ "$isCompare" ] || printf '%d\n' "${result%.*}"
-exit $status
+    local status=0
+    [ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
+    [ ! "$isRecord" ] || recordBenchmark "$result" || status=$?
+    [ "$isCompare" ] || printf '%d\n' "${result%.*}"
+    return $status
+}
+
+$action
