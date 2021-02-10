@@ -67,6 +67,7 @@ HELPTEXT
 mergeRecordFilespec=
 count=1
 typeset -a averageCommand=()
+typeset -a summaryCommand=(); [ -t 1 ] && summaryCommand=(eval 'tee >(sampleLines --inline-always --clear --count result >/dev/tty)')
 typeset -a verboseCommand=()
 isCompare=
 isRecord=
@@ -76,7 +77,7 @@ do
     case "$1" in
 	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
 	--count|-n)	shift; count="$1"; shift; averageCommand=(datamash mean 1);;
-	--verbose|-v)	shift; verboseCommand=(tee /dev/stderr);;
+	--verbose|-v)	shift; summaryCommand=(); verboseCommand=(tee /dev/stderr);;
 	--compare|-C)	shift; isCompare=t;;
 	--record|-R)	shift; isRecord=t;;
 	--record-to-inbox|-I)
@@ -92,6 +93,7 @@ if [ $# -ne 0 ]; then
     printUsage "$0" >&2
     exit 2
 fi
+[ $count -le 1 ] && summaryCommand=()
 
 runBenchmarks()
 {
@@ -162,7 +164,7 @@ if [ -n "$mergeRecordFilespec" ]; then
     exit $status
 fi
 
-result=$(eval 'runBenchmarks' "${averageCommand:+|}" '"${averageCommand[@]}"') || exit $?
+result=$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"') || exit $?
 
 status=0
 [ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
