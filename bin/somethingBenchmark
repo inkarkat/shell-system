@@ -3,7 +3,7 @@ set -o pipefail
 shopt -qs nullglob
 
 : ${SOMETHINGBENCHMARK_SUBJECT_NAME:?}
-: ${SOMETHINGBENCHMARK_SUBJECT_UNIT:?}
+: ${SOMETHINGBENCHMARK_SUBJECT_UNIT:?}	# Can be multiple units separated by tabstops.
 : ${SOMETHINGBENCHMARK_RECORD_FILESPEC:?}
 : ${SOMETHINGBENCHMARK_KEY_COMMAND:=readableHostname}
 : ${SOMETHINGBENCHMARK_KEY_NAME:=hostname}
@@ -18,6 +18,9 @@ shopt -qs nullglob
 # Clients have to implement:
 #benchmarkRound()
 #{
+#   # Can return multiple values separated by tabstops. The count needs to
+#   # correspond to the number of fields in SOMETHINGBENCHMARK_SUBJECT_UNIT for
+#   # averaging to work.
 #   echo 42
 #}
 
@@ -44,10 +47,11 @@ printUsage()
 }
 printLongUsage()
 {
+    local subjectUnitPlural; [[ "$SOMETHINGBENCHMARK_SUBJECT_UNIT" =~ $'\t' ]] && subjectUnitPlural=s
     # This is the long "man page" when launched with the help argument.
     # It is printed to stdout to allow paging with 'more'.
     cat <<HELPDESCRIPTION
-Run a $SOMETHINGBENCHMARK_SUBJECT_NAME and return a $SOMETHINGBENCHMARK_SUBJECT_UNIT number.
+Run a $SOMETHINGBENCHMARK_SUBJECT_NAME and return ${subjectUnitPlural:-a }$SOMETHINGBENCHMARK_SUBJECT_UNIT number${subjectUnitPlural}.
 HELPDESCRIPTION
     echo
     printShortUsage "$1"
@@ -55,7 +59,7 @@ HELPDESCRIPTION
     cat <<HELPTEXT
     --count|-n COUNT	Run this COUNT times and print the average.
     --verbose|-v	Print the full benchmark information in addition to the
-			$SOMETHINGBENCHMARK_SUBJECT_UNIT number.
+			$SOMETHINGBENCHMARK_SUBJECT_UNIT number${subjectUnitPlural}.
     --compare|-C	Compare the result with other, previously recorded
 			hosts.
     --record|-R		Store the result for future comparisons.
@@ -125,7 +129,7 @@ runBenchmarks()
 database()
 {
     local key="${SOMETHINGBENCHMARK_KEY_NAME//[^0-9A-Za-z]/_}"
-    local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^0-9A-Za-z]/_}"
+    local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^0-9A-Za-z$'\t']/_}"
     local context="${SOMETHINGBENCHMARK_CONTEXT_NAME//[^0-9A-Za-z]/_}"
     local system="${SOMETHINGBENCHMARK_SYSTEM_NAME//[^0-9A-Za-z]/_}"
 
@@ -205,7 +209,15 @@ mergeInboxRecords()
 
 getAverages()
 {
-    datamash mean 1
+    local tabChars="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^$'\t']}"
+    local fieldCount=${#tabChars}
+    typeset -a datamashArgs=()
+    local i; for ((i = 1; i <= fieldCount; i++))
+    do
+	datamashArgs+=(mean "$i")
+    done
+
+    datamash "${datamashArgs[@]}"
 }
 
 benchmark()
