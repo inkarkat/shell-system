@@ -84,7 +84,7 @@ while [ $# -ne 0 ]
 do
     case "$1" in
 	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
-	--count|-n)	shift; count="$1"; shift; averageCommand=(datamash mean 1);;
+	--count|-n)	shift; count="$1"; shift; averageCommand=(getAverages);;
 	--verbose|-v)	shift; summaryCommand=(); verboseCommand=(tee /dev/stderr);;
 	--compare|-C)	shift; isCompare=t;;
 	--record|-R)	shift; isRecord=t;;
@@ -201,6 +201,11 @@ mergeInboxRecords()
 	exit 1
     fi
     merge
+}
+
+getAverages()
+{
+    datamash mean 1
 }
 
 benchmark()
