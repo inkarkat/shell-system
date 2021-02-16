@@ -143,7 +143,7 @@ compareWithRecords()
 {
     local result="${1:?}"; shift
     local currentRecord="$(makeRecord "$result")"
-    local currentRecordPattern="$(printf %s "$currentRecord" | field --field-separator $'\t' 1 2 3 | sed -e 's/^/^/' -e 's/\t/[[:space:]]\\+/g')"
+    local currentRecordPattern="$(printf %s "$currentRecord" | sed -e 's/^/^/' -e 's/\t/[[:space:]]\\+/g' -e 's/$/\$/')"
     {
 	printf '%s\n' "$currentRecord"
 	database --command 'if [ -r {} ]; then tail -n +2 {}; else echo >&2 "No records exist yet."; exit 1; fi'
