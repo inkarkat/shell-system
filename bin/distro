@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if exists lsb_release; then
-    lsb_release ${1:--ds}
+    lsb_release ${1:--ds} | sed -e 's/^"\?[[:space:]]*\|[[:space:]]*"\?$//g'
 elif [ -r /etc/redhat-release ]; then
     cat /etc/redhat-release
 elif [ -r /etc/os-release ]; then
