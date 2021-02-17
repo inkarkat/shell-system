@@ -20,8 +20,19 @@ fi
 < <(findmnt --notruncate --noheadings -o SOURCE,FSTYPE -T "${1:-.}") IFS=' ' read -r fsDevice fsType
 if [ -n "$fsDevice" ]; then
     if [ -z "${DISK_NAME+t}" ]; then
-	fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice")" && \
+	if fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice" | nonWhitespaceOutputOrError)" ||
+	    # XXX: lsblk from util-linux 2.23.2 on CentOS Linux release 7.6.1810
+	    # does not follow the parent of a /dev/mapper/centos-root device,
+	    # but correctly shows the hierarchy in its plain output. In
+	    # ASCII-mode, we can easily parse that.
+	    fsParentDevice="$(fsDeviceName="${fsDevice##*/}"; LC_ALL=C lsblk --noheadings | awk -v "fsDeviceName=${fsDeviceName//\\/\\\\}" '
+/^[^|`[:space:]]/ { parent = $1 }
+(gensub(/^\s*[`|]-/, "", 1, $1) == fsDeviceName) { print parent; isFound=1; }
+{ next }
+END { exit ! isFound }
+')"; then
 	    DISK_NAME="$(lsblk --noheadings --nodeps -o MODEL "/dev/$fsParentDevice")"
+	fi
     fi
     if [ "$fsType" = fuseblk ]; then
 	fsType="$(lsblk --noheadings --nodeps -o FSTYPE "$fsDevice")"
