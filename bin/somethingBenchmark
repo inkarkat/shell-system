@@ -14,6 +14,8 @@ shopt -qs nullglob
 : ${SOMETHINGBENCHMARK_SYSTEM_COMMAND:=systeminfo 'Product Name'}
 : ${SOMETHINGBENCHMARK_CURRENT_PREFIX=[07m}
 : ${SOMETHINGBENCHMARK_CURRENT_SUFFIX=[0m}
+: ${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:=''}
+: ${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG:=''}
 
 # Clients have to implement:
 #benchmarkRound()
@@ -34,7 +36,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" '[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record|-I|--record-to-inbox] [-?|-h|--help]'
+    printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" "[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record|-I|--record-to-inbox]${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:+ }${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT} [-?|-h|--help]"
     echo
     printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
 }
@@ -73,6 +75,7 @@ HELPDESCRIPTION
 			Incorporate all benchmark results found in the local
 			inbox location.
 HELPTEXT
+    [ -n "$SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG" ] && printf '%s\n' "$SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG"
 }
 
 action=benchmark
