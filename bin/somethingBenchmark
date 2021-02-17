@@ -26,6 +26,13 @@ shopt -qs nullglob
 #   echo 42
 #}
 
+# Clients may implement:
+#benchmarkPrepare()
+#{
+#   # Can do preparation steps done once before all benchmark rounds.
+#   # Benchmarking will abort if this fails.
+#}
+
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
 readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
 readonly inboxDirspec=~/public/inbox
@@ -124,6 +131,8 @@ fi
 
 runBenchmarks()
 {
+    ! type -t benchmarkPrepare >/dev/null || benchmarkPrepare || return $?
+
     for ((i = 0; i < count; i++))
     do
 	benchmarkRound
