@@ -53,7 +53,7 @@ printShortUsage()
     echo
     printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '-l|--list'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-l|--list [-k|--sort-column N]'
 }
 printUsage()
 {
@@ -93,7 +93,8 @@ HELPDESCRIPTION
     --list|-l		Just print all previously recorded
 			${SOMETHINGBENCHMARK_KEY_NAME} records in sorted order
 			(from lowest to highest rating) without running a new
-			benchmark.
+			benchmark.${subjectUnitPlural:+
+    --sort-column|-k N	Sort by data column N instead of the first.}
 HELPTEXT
     [ -n "$SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG" ] && printf '%s\n' "$SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG"
 }
@@ -107,6 +108,7 @@ typeset -a verboseCommand=()
 isCompare=
 isRecord=
 isRecordToInbox=
+sortDataColumn=1
 while [ $# -ne 0 ]
 do
     case "$1" in
@@ -131,6 +133,8 @@ do
 	--merge-inbox-records)
 			shift; action=mergeInboxRecords;;
 	--list|-l)	shift; action=listRecords;;
+	--sort-column|-k)
+			shift; sortDataColumn="$1"; shift;;
 	--)		shift; break;;
 	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
 	*)		break;;
@@ -178,7 +182,8 @@ printExistingRecords()
 }
 sortAndTabularizeRecords()
 {
-    sort --numeric-sort --field-separator $'\t' --key 2,2 | \
+    local sortColumn=$((sortDataColumn + 1))
+    sort --numeric-sort --field-separator $'\t' --key "${sortColumn},${sortColumn}" | \
     column -s $'\t' -t
 }
 typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS); [ -t 1 ] || pager=()
