@@ -69,7 +69,7 @@ HELPDESCRIPTION
     cat <<HELPTEXT
     --count|-n COUNT	Run this COUNT times and print the average.
     --verbose|-v	Print the full benchmark information in addition to the
-			$SOMETHINGBENCHMARK_SUBJECT_UNIT number${subjectUnitPlural}.
+			${SOMETHINGBENCHMARK_SUBJECT_UNIT//	/ / } number${subjectUnitPlural}.
     --compare|-C	Compare the result with other, previously recorded
 			hosts.
     --record|-R		Store the result for future comparisons.
