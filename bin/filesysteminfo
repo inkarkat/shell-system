@@ -19,8 +19,12 @@ fi
 
 < <(findmnt --notruncate --noheadings -o SOURCE,FSTYPE -T "${1:-.}") IFS=' ' read -r fsDevice fsType
 if [ -n "$fsDevice" ]; then
-    fsParentDevice="$(lsblk --noheadings -o PKNAME "$fsDevice")" && \
+    fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice")" && \
 	diskName="$(lsblk --noheadings --nodeps -o MODEL "/dev/$fsParentDevice")"
+    if [ "$fsType" = fuseblk ]; then
+	fsType="$(lsblk --noheadings --nodeps -o FSTYPE "$fsDevice")"
+	fsType="${fsType}${fsType:+/FUSE}"
+    fi
 fi
 
 printf '%s (%s) on %s\n' "${fsDevice:-unknown partition}" "${fsType:-unknown partition type}" "${diskName:-unidentified disk}"
