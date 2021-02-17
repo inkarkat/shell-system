@@ -165,6 +165,11 @@ makeRecord()
     printf '%s\t%s\t%s\t%s\t%s\n' "$($SOMETHINGBENCHMARK_KEY_COMMAND)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
 }
 
+sortAndTabularizeRecords()
+{
+    sort --numeric-sort --field-separator $'\t' --key 2,2 | \
+    column -s $'\t' -t
+}
 typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS); [ -t 1 ] || pager=()
 compareWithRecords()
 {
@@ -175,8 +180,7 @@ compareWithRecords()
 	printf '%s\n' "$currentRecord"
 	database --command 'if [ -r {} ]; then tail -n +2 {}; else echo >&2 "No records exist yet."; exit 1; fi'
     } | \
-	sort --numeric-sort --field-separator $'\t' --key 2,2 | \
-	column -s $'\t' -t | \
+	sortAndTabularizeRecords | \
 	eval 'highlight-pattern --full-lines ${SOMETHINGBENCHMARK_CURRENT_PREFIX:+--color "$SOMETHINGBENCHMARK_CURRENT_PREFIX"} ${SOMETHINGBENCHMARK_CURRENT_SUFFIX:+--color-off "$SOMETHINGBENCHMARK_CURRENT_SUFFIX"} -- "$currentRecordPattern"' "${pager:+|}" '"${pager[@]}"'
 }
 
