@@ -14,6 +14,7 @@ shopt -qs nullglob
 : ${SOMETHINGBENCHMARK_SYSTEM_COMMAND:=systeminfo 'Product Name'}
 : ${SOMETHINGBENCHMARK_CURRENT_PREFIX=[07m}
 : ${SOMETHINGBENCHMARK_CURRENT_SUFFIX=[0m}
+: ${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES:=''}
 : ${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:=''}
 : ${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG:=''}
 
@@ -50,7 +51,7 @@ printShortUsage()
     # skim the long one.
     printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" "[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record|-I|--record-to-inbox]${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:+ }${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT} [-?|-h|--help]"
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
+    printf 'Usage: %s%q %s\n' "${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES}${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES:+ }" "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
 }
 printUsage()
 {
