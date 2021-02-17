@@ -32,6 +32,11 @@ shopt -qs nullglob
 #   # Can do preparation steps done once before all benchmark rounds.
 #   # Benchmarking will abort if this fails.
 #}
+#recordPrepare()
+#{
+#   # Can do preparation steps done once before working with records.
+#   # The record operation will abort if this fails.
+#}
 
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
 readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
@@ -149,8 +154,12 @@ database()
     miniDB --basedir "$recordDirspec" --schema "${key^^} ${unit^^} DATE ${context^^} ${system^^}" --table "$recordFilename" "$@"
 }
 
+didPrepareRecord=
 makeRecord()
 {
+    [ "$didPrepareRecord" ] || ! type -t recordPrepare >/dev/null || recordPrepare || return $?
+    didPrepareRecord=t
+
     local result="${1:?}"; shift
     printf '%s\t%s\t%s\t%s\t%s\n' "$($SOMETHINGBENCHMARK_KEY_COMMAND)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
 }
@@ -159,7 +168,7 @@ typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS); [ -t 1 ] || pager=()
 compareWithRecords()
 {
     local result="${1:?}"; shift
-    local currentRecord="$(makeRecord "$result")"
+    local currentRecord; currentRecord="$(makeRecord "$result")" || return $?
     local currentRecordPattern="$(printf %s "$currentRecord" | sed -e 's/^/^/' -e 's/\t/[[:space:]]\\+/g' -e 's/$/\$/')"
     {
 	printf '%s\n' "$currentRecord"
@@ -173,7 +182,7 @@ compareWithRecords()
 recordBenchmark()
 {
     local result="${1:?}"; shift
-    local record="$(makeRecord "$result")"
+    local record; record="$(makeRecord "$result")" || return $?
     if [ "$isRecordToInbox" ]; then
 	printf '%s\n' "$record" | inbox --base "$inboxFilenameBase"
     else
