@@ -7,7 +7,7 @@ Print device name, partition type, and underlying disk name of the current
 directory / FILE.
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[FILE] [-?|-h|--help]'
+    printf 'Usage: [DISK_NAME=disk-name] %q %s\n' "$(basename "$1")" '[FILE] [-?|-h|--help]'
 }
 case "$1" in
     --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
@@ -19,12 +19,14 @@ fi
 
 < <(findmnt --notruncate --noheadings -o SOURCE,FSTYPE -T "${1:-.}") IFS=' ' read -r fsDevice fsType
 if [ -n "$fsDevice" ]; then
-    fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice")" && \
-	diskName="$(lsblk --noheadings --nodeps -o MODEL "/dev/$fsParentDevice")"
+    if [ -z "${DISK_NAME+t}" ]; then
+	fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice")" && \
+	    DISK_NAME="$(lsblk --noheadings --nodeps -o MODEL "/dev/$fsParentDevice")"
+    fi
     if [ "$fsType" = fuseblk ]; then
 	fsType="$(lsblk --noheadings --nodeps -o FSTYPE "$fsDevice")"
 	fsType="${fsType}${fsType:+/FUSE}"
     fi
 fi
 
-printf '%s (%s) on %s\n' "${fsDevice:-unknown partition}" "${fsType:-unknown partition type}" "${diskName:-unidentified disk}"
+printf '%s (%s) on %s\n' "${fsDevice:-unknown partition}" "${fsType:-unknown partition type}" "${DISK_NAME:-unidentified disk}"
