@@ -51,7 +51,9 @@ printShortUsage()
     # skim the long one.
     printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" "[-n|--count COUNT] [-v|--verbose] [-C|--compare] [-R|--record|-I|--record-to-inbox]${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:+ }${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT} [-?|-h|--help]"
     echo
-    printf 'Usage: %s%q %s\n' "${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES}${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES:+ }" "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-l|--list'
 }
 printUsage()
 {
@@ -77,7 +79,7 @@ HELPDESCRIPTION
     --verbose|-v	Print the full benchmark information in addition to the
 			${SOMETHINGBENCHMARK_SUBJECT_UNIT//	/ / } number${subjectUnitPlural}.
     --compare|-C	Compare the result with other, previously recorded
-			hosts.
+			${SOMETHINGBENCHMARK_KEY_NAME} records.
     --record|-R		Store the result for future comparisons.
     --record-to-inbox|-I
 			Store the result in the inbox location (so that it can
@@ -88,6 +90,10 @@ HELPDESCRIPTION
     --merge-inbox-records
 			Incorporate all benchmark results found in the local
 			inbox location.
+    --list|-l		Just print all previously recorded
+			${SOMETHINGBENCHMARK_KEY_NAME} records in sorted order
+			(from lowest to highest rating) without running a new
+			benchmark.
 HELPTEXT
     [ -n "$SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG" ] && printf '%s\n' "$SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_LONG"
 }
@@ -124,6 +130,7 @@ do
 			;;
 	--merge-inbox-records)
 			shift; action=mergeInboxRecords;;
+	--list|-l)	shift; action=listRecords;;
 	--)		shift; break;;
 	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
 	*)		break;;
@@ -186,6 +193,11 @@ compareWithRecords()
     } | \
 	sortAndTabularizeRecords | \
 	eval 'highlight-pattern --full-lines ${SOMETHINGBENCHMARK_CURRENT_PREFIX:+--color "$SOMETHINGBENCHMARK_CURRENT_PREFIX"} ${SOMETHINGBENCHMARK_CURRENT_SUFFIX:+--color-off "$SOMETHINGBENCHMARK_CURRENT_SUFFIX"} -- "$currentRecordPattern"' "${pager:+|}" '"${pager[@]}"'
+}
+listRecords()
+{
+    printExistingRecords | \
+	eval sortAndTabularizeRecords "${pager:+|}" '"${pager[@]}"'
 }
 
 recordBenchmark()
