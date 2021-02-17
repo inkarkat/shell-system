@@ -1,4 +1,5 @@
 #!/bin/bash
+shopt -qs extglob
 
 printUsage()
 {
@@ -32,6 +33,7 @@ if [ -n "$fsDevice" ]; then
 END { exit ! isFound }
 ')"; then
 	    DISK_NAME="$(lsblk --noheadings --nodeps -o MODEL "/dev/$fsParentDevice")"
+	    DISK_NAME="${DISK_NAME%%+( )}"
 	fi
     fi
     if [ "$fsType" = fuseblk ]; then
