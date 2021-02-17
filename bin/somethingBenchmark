@@ -241,7 +241,7 @@ benchmark()
     local status=0
     [ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
     [ ! "$isRecord" ] || recordBenchmark "$result" || status=$?
-    [ "$isCompare" ] || printf '%d\n' "${result%.*}"
+    [ "$isCompare" ] || printf '%s\n' "$result"
     return $status
 }
 
