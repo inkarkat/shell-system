@@ -1,0 +1,26 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Print device name, partition type, and underlying disk name of the current
+directory / FILE.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[FILE] [-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -gt 1 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+< <(findmnt --notruncate --noheadings -o SOURCE,FSTYPE -T "${1:-.}") IFS=' ' read -r fsDevice fsType
+if [ -n "$fsDevice" ]; then
+    fsParentDevice="$(lsblk --noheadings -o PKNAME "$fsDevice")" && \
+	diskName="$(lsblk --noheadings --nodeps -o MODEL "/dev/$fsParentDevice")"
+fi
+
+printf '%s (%s) on %s\n' "${fsDevice:-unknown partition}" "${fsType:-unknown partition type}" "${diskName:-unidentified disk}"
