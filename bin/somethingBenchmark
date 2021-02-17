@@ -49,11 +49,12 @@ printUsage()
 }
 printLongUsage()
 {
-    local subjectUnitPlural; [[ "$SOMETHINGBENCHMARK_SUBJECT_UNIT" =~ $'\t' ]] && subjectUnitPlural=s
+    local subjectUnitPronoun=a
+    local subjectUnitPlural; [[ "$SOMETHINGBENCHMARK_SUBJECT_UNIT" =~ $'\t' ]] && { subjectUnitPronoun=''; subjectUnitPlural=s; }
     # This is the long "man page" when launched with the help argument.
     # It is printed to stdout to allow paging with 'more'.
     cat <<HELPDESCRIPTION
-Run a $SOMETHINGBENCHMARK_SUBJECT_NAME and return ${subjectUnitPlural:-a }$SOMETHINGBENCHMARK_SUBJECT_UNIT number${subjectUnitPlural}.
+Run a $SOMETHINGBENCHMARK_SUBJECT_NAME and return ${subjectUnitPronoun}${subjectUnitPronoun:+ }${SOMETHINGBENCHMARK_SUBJECT_UNIT//	/, } number${subjectUnitPlural}.
 HELPDESCRIPTION
     echo
     printShortUsage "$1"
