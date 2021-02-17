@@ -165,6 +165,10 @@ makeRecord()
     printf '%s\t%s\t%s\t%s\t%s\n' "$($SOMETHINGBENCHMARK_KEY_COMMAND)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
 }
 
+printExistingRecords()
+{
+    database --command 'if [ -r {} ]; then tail -n +2 {}; else echo >&2 "No records exist yet."; exit 1; fi'
+}
 sortAndTabularizeRecords()
 {
     sort --numeric-sort --field-separator $'\t' --key 2,2 | \
@@ -178,7 +182,7 @@ compareWithRecords()
     local currentRecordPattern="$(printf %s "$currentRecord" | sed -e 's/^/^/' -e 's/\t/[[:space:]]\\+/g' -e 's/$/\$/')"
     {
 	printf '%s\n' "$currentRecord"
-	database --command 'if [ -r {} ]; then tail -n +2 {}; else echo >&2 "No records exist yet."; exit 1; fi'
+	printExistingRecords
     } | \
 	sortAndTabularizeRecords | \
 	eval 'highlight-pattern --full-lines ${SOMETHINGBENCHMARK_CURRENT_PREFIX:+--color "$SOMETHINGBENCHMARK_CURRENT_PREFIX"} ${SOMETHINGBENCHMARK_CURRENT_SUFFIX:+--color-off "$SOMETHINGBENCHMARK_CURRENT_SUFFIX"} -- "$currentRecordPattern"' "${pager:+|}" '"${pager[@]}"'
