@@ -259,7 +259,7 @@ mergeInboxRecords()
 getAverages()
 {
     local tabChars="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^$'\t']}"
-    local fieldCount=${#tabChars}
+    local fieldCount=$((${#tabChars} + 1))
     typeset -a datamashArgs=()
     local i; for ((i = 1; i <= fieldCount; i++))
     do
