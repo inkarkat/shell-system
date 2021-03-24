@@ -50,7 +50,7 @@ printShortUsage()
     local multipleSubjectSortArgs; [[ "$SOMETHINGBENCHMARK_SUBJECT_UNIT" =~ $'\t' ]] && multipleSubjectSortArgs='[-k|--sort-column N]'
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }%q %s\\n" "$(basename "$1")" "[-n|--count COUNT] [-v|--verbose] [-C|--compare${multipleSubjectSortArgs:+ }${multipleSubjectSortArgs}] [-R|--record|-I|--record-to-inbox]${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:+ }${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT} [-?|-h|--help]"
+    printf "Usage: ${SOMETHINGBENCHMARK_KEY_OVERRIDE:+[}${SOMETHINGBENCHMARK_KEY_OVERRIDE}${SOMETHINGBENCHMARK_KEY_OVERRIDE:+=...] }${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES}${SOMETHINGBENCHMARK_ENVIRONMENT_VARIABLES:+ }%q %s\\n" "$(basename "$1")" "[-n|--count COUNT] [-v|--verbose] [-C|--compare${multipleSubjectSortArgs:+ }${multipleSubjectSortArgs}] [-R|--record|-I|--record-to-inbox]${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT:+ }${SOMETHINGBENCHMARK_ADDITIONAL_ARGUMENTS_SHORT} [-?|-h|--help]"
     echo
     printf 'Usage: %q %s\n' "$(basename "$1")" '--merge-record|-M RECORD-FILE [FILE2 ...] | --merge-inbox-records'
     echo
