@@ -6,6 +6,10 @@
 
 # Source: https://askubuntu.com/a/584692/72217
 readonly pythonHeader='
+import sys
+MIN_PYTHON = (3, 0)
+assert sys.version_info >= MIN_PYTHON, "requires Python " + ".".join([str(n) for n in MIN_PYTHON]) + " or newer"
+
 from gi import require_version
 require_version("Gdk", "3.0")
 from gi.repository import Gdk
