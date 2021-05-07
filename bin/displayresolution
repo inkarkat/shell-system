@@ -72,4 +72,4 @@ case "$1" in
 			;;
     --each)		shift; pythonProgram="$pythonEach";;
 esac
-exec python3 -c "$pythonProgram"
+exec python -c "$pythonProgram"
