@@ -1,5 +1,18 @@
 #!/bin/bash
 
+printUsage()
+{
+    cat <<HELPTEXT
+Print information about the system's Linux distribution.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-a|--all] [-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+
+
 if exists lsb_release; then
     lsb_release ${1:--ds} | sed -e 's/^"\?[[:space:]]*\|[[:space:]]*"\?$//g'
 elif [ -r /etc/redhat-release ]; then
