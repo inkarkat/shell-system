@@ -5,6 +5,6 @@ MIN_PYTHON = (3, 0)
 assert sys.version_info >= MIN_PYTHON, "requires Python " + ".".join([str(n) for n in MIN_PYTHON]) + " or newer"
 
 from gi import require_version
-from gi.repository import Gdk
 require_version("Gdk", "3.0")
+from gi.repository import Gdk
 print(Gdk.Display.get_default().get_n_monitors())
