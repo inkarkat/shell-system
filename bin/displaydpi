@@ -1,29 +1,62 @@
 #!/bin/bash
-# Source: https://superuser.com/a/69212/117820
+shopt -qs extglob
 
 printUsage()
 {
     cat <<HELPTEXT
 Get the display resolution in dots per inch (dpi) of the primary display / each
-monitor.
+monitor, as configured in the X server / based on the passed display diameter.
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[--primary|--each] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[--primary|--each] [INCHES\"|MILLIMETERS] [-?|-h|--help]'
 }
+typeset -a targetDisplayArgs=()
+displayDiameterInches=
 sedStopper=
-case "$1" in
-    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
-    --primary)		shift; sedStopper='q';;
-    --each)		shift; sedStopper='';;
-esac
+while [ $# -ne 0 ]
+do
+    case "$1" in
+	--help|-h|-\?)	    shift; printUsage "$0"; exit 0;;
+	--primary)	    targetDisplayArgs+=("$1"); shift; sedStopper='q';;
+	--each)		    targetDisplayArgs+=("$1"); shift; sedStopper='';;
+	+([0-9.])\")	    displayDiameterInches="${1%\"}"; shift;;
+	+([0-9]))	    displayDiameterInches="$(bc <<<"scale=2; $1 / 25.4")"; shift;;
+	--)		    shift; break;;
+	-*)		    { echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
+	*)		    break;;
+    esac
+done
+if [ $# -gt 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
 
-# Assumption: xdpyinfo lists screens from 0 ascending and 0 is the primary one.
-# Not sure about that one, and I don't have a multi-monitor setup to verify
-# right now.
-LC_MESSAGES=C xdpyinfo | sed -n \
-    -e 's/^ *resolution: *\([0-9]\+\)x\([0-9]\+\) dots per inch$/\1\t\2/' \
-    -e 't print' \
-    -e b \
-    -e ':print' \
-    -e 's/^\([0-9]\+\)\t\1$/\1/' \
-    -e "p${sedStopper:+; }$sedStopper"
+# Source: https://superuser.com/a/69212/117820
+queryDpi()
+{
+    # Assumption: xdpyinfo lists screens from 0 ascending and 0 is the primary
+    # one. Not sure about that one, and I don't have a multi-monitor setup to
+    # verify right now.
+    LC_MESSAGES=C xdpyinfo | sed -n \
+	-e 's/^ *resolution: *\([0-9]\+\)x\([0-9]\+\) dots per inch$/\1\t\2/' \
+	-e 't print' \
+	-e b \
+	-e ':print' \
+	-e 's/^\([0-9]\+\)\t\1$/\1/' \
+	-e "p${sedStopper:+; }$sedStopper"
+}
+
+calculateDpi()
+{
+    while read -r xres yres
+    do
+	bc <<<"scale=0; sqrt($xres * $xres + $yres * $yres) / $displayDiameterInches"
+    done < <(displayresolution "${targetDisplayArgs[@]}")
+}
+
+
+if [ -n "$displayDiameterInches" ]; then
+    calculateDpi
+else
+    queryDpi
+fi
