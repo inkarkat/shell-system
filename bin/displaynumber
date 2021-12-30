@@ -7,4 +7,11 @@ assert sys.version_info >= MIN_PYTHON, "requires Python " + ".".join([str(n) for
 from gi import require_version
 require_version("Gdk", "3.0")
 from gi.repository import Gdk
-print(Gdk.Display.get_default().get_n_monitors())
+require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+if Gtk.get_major_version() == 3 and Gtk.get_minor_version() >= 22:
+    display = Gdk.Display.get_default()
+else:
+    display = Gdk.Screen.get_default()
+print(display.get_n_monitors())
