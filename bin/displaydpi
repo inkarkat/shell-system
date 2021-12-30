@@ -1,0 +1,29 @@
+#!/bin/bash
+# Source: https://superuser.com/a/69212/117820
+
+printUsage()
+{
+    cat <<HELPTEXT
+Get the display resolution in dots per inch (dpi) of the primary display / each
+monitor.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[--primary|--each] [-?|-h|--help]'
+}
+sedStopper=
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --primary)		shift; sedStopper='q';;
+    --each)		shift; sedStopper='';;
+esac
+
+# Assumption: xdpyinfo lists screens from 0 ascending and 0 is the primary one.
+# Not sure about that one, and I don't have a multi-monitor setup to verify
+# right now.
+LC_MESSAGES=C xdpyinfo | sed -n \
+    -e 's/^ *resolution: *\([0-9]\+\)x\([0-9]\+\) dots per inch$/\1\t\2/' \
+    -e 't print' \
+    -e b \
+    -e ':print' \
+    -e 's/^\([0-9]\+\)\t\1$/\1/' \
+    -e "p${sedStopper:+; }$sedStopper"
