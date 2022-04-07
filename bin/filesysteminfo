@@ -38,7 +38,7 @@ END { exit ! isFound }
     fi
     if [ "$fsType" = fuseblk ]; then
 	fsType="$(lsblk --noheadings --nodeps -o FSTYPE "$fsDevice")"
-	fsType="${fsType}${fsType:+/FUSE}"
+	fsType+="${fsType:+/FUSE}"
     fi
 fi
 
