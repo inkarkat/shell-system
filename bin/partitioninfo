@@ -1,0 +1,19 @@
+#!/bin/bash
+set -o pipefail
+
+printUsage()
+{
+    cat <<HELPTEXT
+Print partition UUID of DEVICE / all devices.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[DEVICE ...] [-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -eq 1 ]; then
+    exec lsblk --nodeps --noheadings -o UUID "$@"
+else
+    lsblk --fs -o 'NAME,UUID' "$@" | grep -v -e '[[:space:]]$'
+fi
