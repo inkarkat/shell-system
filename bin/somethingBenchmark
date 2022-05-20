@@ -40,7 +40,7 @@ shopt -qs nullglob
 #}
 
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
-readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
+readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC").tsv"
 readonly inboxDirspec=${INBOX_DIR:-~/inbox}
 readonly inboxFilenameBase="$(basename -- "$0")"
 readonly inboxFilespecPrefix="${inboxDirspec}/${inboxFilenameBase}_"
