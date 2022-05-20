@@ -33,10 +33,19 @@ shopt -qs nullglob
 #   # Can do preparation steps done once before all benchmark rounds.
 #   # Benchmarking will abort if this fails.
 #}
+#benchmarkFinalize()
+#{
+#   # Can do cleanup steps done once after all benchmark rounds.
+#   # Benchmarks will not be reported / recorded if this fails.
+#}
 #recordPrepare()
 #{
 #   # Can do preparation steps done once before working with records.
 #   # The record operation will abort if this fails.
+#}
+#recordFinalize()
+#{
+#   # Can do cleanup steps done once after working with records.
 #}
 
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
@@ -166,6 +175,7 @@ database()
 }
 
 didPrepareRecord=
+needRecordFinalization=
 makeRecord()
 {
     [ "$didPrepareRecord" ] || ! type -t recordPrepare >/dev/null || recordPrepare || return $?
@@ -173,6 +183,7 @@ makeRecord()
 
     local result="${1:?}"; shift
     printf '%s\t%s\t%s\t%s\t%s\n' "$($SOMETHINGBENCHMARK_KEY_COMMAND)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
+    needRecordFinalization=t
 }
 
 printExistingRecords()
@@ -271,11 +282,13 @@ benchmark()
 {
     ! type -t benchmarkPrepare >/dev/null || benchmarkPrepare || return $?
 	local status=0 result; result="$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"')" || status=$?
+    ! type -t benchmarkFinalize >/dev/null || benchmarkFinalize || status=$?
     [ $status -eq 0 ] || return $status
 
     [ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
     [ ! "$isRecord" ] || recordBenchmark "$result" || status=$?
     [ "$isCompare" ] || printf '%s\n' "$result"
+    [ ! "$needRecordFinalization" ] || ! type -t recordFinalize >/dev/null || recordFinalize || status=$?
     return $status
 }
 
