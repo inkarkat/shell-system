@@ -149,8 +149,6 @@ fi
 
 runBenchmarks()
 {
-    ! type -t benchmarkPrepare >/dev/null || benchmarkPrepare || return $?
-
     for ((i = 0; i < count; i++))
     do
 	benchmarkRound
@@ -271,10 +269,10 @@ getAverages()
 
 benchmark()
 {
-    local result
-    result=$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"') || return $?
+    ! type -t benchmarkPrepare >/dev/null || benchmarkPrepare || return $?
+	local status=0 result; result="$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"')" || status=$?
+    [ $status -eq 0 ] || return $status
 
-    local status=0
     [ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
     [ ! "$isRecord" ] || recordBenchmark "$result" || status=$?
     [ "$isCompare" ] || printf '%s\n' "$result"
