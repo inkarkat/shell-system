@@ -161,8 +161,8 @@ database()
 {
     local key="${SOMETHINGBENCHMARK_KEY_NAME//[^0-9A-Za-z]/_}"
     local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^0-9A-Za-z$'\t']/_}"
-    local context="${SOMETHINGBENCHMARK_CONTEXT_NAME//[^0-9A-Za-z]/_}"
-    local system="${SOMETHINGBENCHMARK_SYSTEM_NAME//[^0-9A-Za-z]/_}"
+    local context="${SOMETHINGBENCHMARK_CONTEXT_NAME//[^0-9A-Za-z$'\t']/_}"
+    local system="${SOMETHINGBENCHMARK_SYSTEM_NAME//[^0-9A-Za-z$'\t']/_}"
 
     miniDB --basedir "$recordDirspec" --schema "${key^^} ${unit^^} DATE ${context^^} ${system^^}" --table "$recordFilename" "$@"
 }
