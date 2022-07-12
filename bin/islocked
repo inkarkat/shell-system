@@ -2,4 +2,4 @@
 # Source:
 #   http://askubuntu.com/questions/35243/is-there-a-programmable-way-to-tell-if-the-screen-is-locked
 
-LC_ALL=C gnome-screensaver-command -q | grep -q 'is active' 2>/dev/null
+LC_ALL=C gnome-screensaver-command --query | grep --quiet 'is active' 2>/dev/null

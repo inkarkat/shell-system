@@ -33,14 +33,23 @@ shopt -qs nullglob
 #   # Can do preparation steps done once before all benchmark rounds.
 #   # Benchmarking will abort if this fails.
 #}
+#benchmarkFinalize()
+#{
+#   # Can do cleanup steps done once after all benchmark rounds.
+#   # Benchmarks will not be reported / recorded if this fails.
+#}
 #recordPrepare()
 #{
 #   # Can do preparation steps done once before working with records.
 #   # The record operation will abort if this fails.
 #}
+#recordFinalize()
+#{
+#   # Can do cleanup steps done once after working with records.
+#}
 
 readonly recordDirspec="$(dirname -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC")"
-readonly recordFilename="$(basename -- "$SOMETHINGBENCHMARK_RECORD_FILESPEC").tsv"
+readonly recordFilename="$(basename -- "${SOMETHINGBENCHMARK_RECORD_FILESPEC%.tsv}").tsv"
 readonly inboxDirspec=${INBOX_DIR:-~/inbox}
 readonly inboxFilenameBase="$(basename -- "$0")"
 readonly inboxFilespecPrefix="${inboxDirspec}/${inboxFilenameBase}_"
@@ -149,8 +158,6 @@ fi
 
 runBenchmarks()
 {
-    ! type -t benchmarkPrepare >/dev/null || benchmarkPrepare || return $?
-
     for ((i = 0; i < count; i++))
     do
 	benchmarkRound
@@ -161,13 +168,14 @@ database()
 {
     local key="${SOMETHINGBENCHMARK_KEY_NAME//[^0-9A-Za-z]/_}"
     local unit="${SOMETHINGBENCHMARK_SUBJECT_UNIT//[^0-9A-Za-z$'\t']/_}"
-    local context="${SOMETHINGBENCHMARK_CONTEXT_NAME//[^0-9A-Za-z]/_}"
-    local system="${SOMETHINGBENCHMARK_SYSTEM_NAME//[^0-9A-Za-z]/_}"
+    local context="${SOMETHINGBENCHMARK_CONTEXT_NAME//[^0-9A-Za-z$'\t']/_}"
+    local system="${SOMETHINGBENCHMARK_SYSTEM_NAME//[^0-9A-Za-z$'\t']/_}"
 
     miniDB --basedir "$recordDirspec" --schema "${key^^} ${unit^^} DATE ${context^^} ${system^^}" --table "$recordFilename" "$@"
 }
 
 didPrepareRecord=
+needRecordFinalization=
 makeRecord()
 {
     [ "$didPrepareRecord" ] || ! type -t recordPrepare >/dev/null || recordPrepare || return $?
@@ -175,6 +183,7 @@ makeRecord()
 
     local result="${1:?}"; shift
     printf '%s\t%s\t%s\t%s\t%s\n' "$($SOMETHINGBENCHMARK_KEY_COMMAND)" "$result" "$(date +%F)" "$($SOMETHINGBENCHMARK_CONTEXT_COMMAND)" "$($SOMETHINGBENCHMARK_SYSTEM_COMMAND)"
+    needRecordFinalization=t
 }
 
 printExistingRecords()
@@ -271,13 +280,15 @@ getAverages()
 
 benchmark()
 {
-    local result
-    result=$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"') || return $?
+    ! type -t benchmarkPrepare >/dev/null || benchmarkPrepare || return $?
+	local status=0 result; result="$(eval 'runBenchmarks' "${summaryCommand:+|}" '"${summaryCommand[@]}"' "${averageCommand:+|}" '"${averageCommand[@]}"')" || status=$?
+    ! type -t benchmarkFinalize >/dev/null || benchmarkFinalize || status=$?
+    [ $status -eq 0 ] || return $status
 
-    local status=0
     [ ! "$isCompare" ] || compareWithRecords "$result" || status=$?
     [ ! "$isRecord" ] || recordBenchmark "$result" || status=$?
     [ "$isCompare" ] || printf '%s\n' "$result"
+    [ ! "$needRecordFinalization" ] || ! type -t recordFinalize >/dev/null || recordFinalize || status=$?
     return $status
 }
 
