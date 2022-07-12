@@ -1,0 +1,28 @@
+#!/bin/bash
+# Source: https://ostechnix.com/check-linux-system-physical-virtual-machine/
+# Source: https://unix.stackexchange.com/questions/3685/find-out-if-the-os-is-running-in-a-virtual-environment
+# Source: https://unix.stackexchange.com/questions/89714/easy-way-to-determine-the-virtualization-technology-of-a-linux-machine
+
+type -t systemd-detect-virt >/dev/null && \
+    exec systemd-detect-virt --quiet
+
+dmesg --notime | grep --quiet 'Hypervisor detected' && exit 0
+
+if type -t imvirt >/dev/null; then
+    # imvirt either prints "Physical" or the virtualization technology.
+    # It does not necessarily need administrative rights.
+    if result="$(imvirt)" && [ -n "$result" ]; then
+	[ "$result" = 'Physical' ] && exit 1 || exit 0
+    fi
+fi
+
+SUDO=guiSudo; [ $EUID -eq 0 ] && SUDO=''
+
+if type -t virt-what >/dev/null; then
+    # virt-what either prints nothing or virtualization information.
+    if result="$($SUDO virt-what)"; then
+	[ -n "$result" ] && exit 0 || exit 1
+    fi
+fi
+
+exit 1
