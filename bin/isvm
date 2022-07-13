@@ -3,6 +3,22 @@
 # Source: https://unix.stackexchange.com/questions/3685/find-out-if-the-os-is-running-in-a-virtual-environment
 # Source: https://unix.stackexchange.com/questions/89714/easy-way-to-determine-the-virtualization-technology-of-a-linux-machine
 
+printUsage()
+{
+    cat <<HELPTEXT
+Tests whether the current system is virtualized; i.e. inside a VM or container.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
 type -t systemd-detect-virt >/dev/null && \
     exec systemd-detect-virt --quiet
 
@@ -25,4 +41,4 @@ if type -t virt-what >/dev/null; then
     fi
 fi
 
-exit 1
+exit 3
