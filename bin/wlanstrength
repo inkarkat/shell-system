@@ -6,18 +6,25 @@ printUsage()
 Print information about the WLAN link quality.
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-%|--percentage] [-?|-h|--help]'
 }
+
+typeset -a iwconfigExtractor=(grep --fixed-strings 'Link Quality')
+wirelessExtractorProgram='NR==3 {printf("WiFi Signal Strength = %.0f%%\n",$3*10/7)}'
 case "$1" in
     --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --percentage|-%)	shift
+			iwconfigExtractor=(sed -n -e 's#^.*Link Quality=\([[:digit:]]\+/[[:digit:]]\+\)[[:space:]].*$#echo 100*\1 | bc#' -e T -e e -e p)
+			wirelessExtractorProgram='NR==3 {printf("%.0f\n",$3*10/7)}'
+			;;
 esac
 
 
 if type -t iwconfig >/dev/null; then
-    LC_ALL=C iwconfig 2>/dev/null | grep --fixed-strings 'Link Quality'
+    LC_ALL=C iwconfig 2>/dev/null | "${iwconfigExtractor[@]}"
 elif [ -r /proc/net/wireless ]; then
     # Source: https://askubuntu.com/a/440149/72217
-    awk 'NR==3 {printf("WiFi Signal Strength = %.0f%%\n",$3*10/7)}' /proc/net/wireless
+    awk "$wirelessExtractorProgram" /proc/net/wireless
 else
     exit 3
 fi
