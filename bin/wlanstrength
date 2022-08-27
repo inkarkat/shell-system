@@ -1,23 +1,51 @@
 #!/bin/bash
 
+printShortUsage()
+{
+    # Note: short followed by long option; if the user knows the short one, she can
+    # skim the long one.
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-%|--percentage|(-g|--graph|-s|--statistics] [-p|--pause|-e|--every P[SUFFIX][ADJUSTMENT])] [-?|-h|--help]'
+}
 printUsage()
 {
-    cat <<HELPTEXT
+    # This is the short help when launched with no or incorrect arguments.
+    # It is printed to stderr to avoid accidental processing.
+    printShortUsage "$1" >&2
+    printf >&2 '\nTry %q --help for more information.\n' "$(basename "$1")"
+}
+printLongUsage()
+{
+    # This is the long "man page" when launched with the help argument.
+    # It is printed to stdout to allow paging with 'more'.
+    cat <<HELPDESCRIPTION
 Print information about the WLAN link quality.
-HELPTEXT
+HELPDESCRIPTION
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-%|--percentage|-c|--continuous|-s|--statistics] [-p|--pause|-e|--every P[SUFFIX][ADJUSTMENT]] [-?|-h|--help]'
+    printShortUsage "$1"
+    echo
+    cat <<HELPTEXT
+    --percentage|-%	Just show the link quality as a percentage number
+			(between 0 and 100).
+    --graph|-g		Continuously print a one-line sparkline graph of the
+			link quality, updated every second.
+    --statistics|-s	Continuously print one-line statistics (min-max, median
+			and mean values, first and third quartile, standard
+			deviation, number of [unique] samples), updated every
+			second.
+    --every|-e|--pause|-p P[SUFFIX][ADJUSTMENT]
+			Update every P / with a pause of P between each update.
+HELPTEXT
 }
 
 typeset -a iwconfigExtractor=(grep --fixed-strings 'Link Quality')
 wirelessExtractorProgram='NR==3 {printf("WiFi Signal Strength = %.0f%%\n",$3*10/7)}'
 case "$1" in
-    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
     --percentage|-%)	shift
 			iwconfigExtractor=(sed -n -e 's#^.*Link Quality=\([[:digit:]]\+/[[:digit:]]\+\)[[:space:]].*$#echo 100*\1 | bc#' -e T -e e -e p)
 			wirelessExtractorProgram='NR==3 {printf("%.0f\n",$3*10/7)}'
 			;;
-    --continuous|-c)	shift
+    --graph|-g)		shift
 			printf -v quotedScriptFilespec %q "${BASH_SOURCE[0]}"
 			quotedRepeatArgs=; if [ $# -gt 0 ]; then printf -v quotedRepeatArgs ' %q' "$@"; fi
 			forever --command "repeat${quotedRepeatArgs} --count ${COLUMNS:-80} --command '$quotedScriptFilespec -%'; printf \\\\e[1G\\\\n" | \
