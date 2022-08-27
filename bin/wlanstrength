@@ -1,10 +1,15 @@
 #!/bin/bash
 
+printf -v quotedScriptFilespec %q "${BASH_SOURCE[0]}"
+SOMETHINGGRAPHEDORSTATISTICED_WHAT='link quality'
+SOMETHINGGRAPHEDORSTATISTICED_COMMAND="$quotedScriptFilespec --percentage"
+source somethingGraphedOrStatisticed 2>/dev/null
+
 printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-%|--percentage|(-g|--graph|-s|--statistics] [-p|--pause|-e|--every P[SUFFIX][ADJUSTMENT])] [-?|-h|--help]'
+    printf 'Usage: %q %s%s %s\n' "$(basename "$1")" '[-%|--percentage]' "${SOMETHINGGRAPHEDORSTATISTICED_SHORT_USAGE:+ }$SOMETHINGGRAPHEDORSTATISTICED_SHORT_USAGE" '[-?|-h|--help]'
 }
 printUsage()
 {
@@ -26,15 +31,8 @@ HELPDESCRIPTION
     cat <<HELPTEXT
     --percentage|-%	Just show the link quality as a percentage number
 			(between 0 and 100).
-    --graph|-g		Continuously print a one-line sparkline graph of the
-			link quality, updated every second.
-    --statistics|-s	Continuously print one-line statistics (min-max, median
-			and mean values, first and third quartile, standard
-			deviation, number of [unique] samples), updated every
-			second.
-    --every|-e|--pause|-p P[SUFFIX][ADJUSTMENT]
-			Update every P / with a pause of P between each update.
 HELPTEXT
+    [ -z "$SOMETHINGGRAPHEDORSTATISTICED_LONG_USAGE" ] || printf '%s\n' "${SOMETHINGGRAPHEDORSTATISTICED_LONG_USAGE:?}"
 }
 
 typeset -a iwconfigExtractor=(grep --fixed-strings 'Link Quality')
@@ -45,20 +43,8 @@ case "$1" in
 			iwconfigExtractor=(sed -n -e 's#^.*Link Quality=\([[:digit:]]\+/[[:digit:]]\+\)[[:space:]].*$#echo 100*\1 | bc#' -e T -e e -e p)
 			wirelessExtractorProgram='NR==3 {printf("%.0f\n",$3*10/7)}'
 			;;
-    --graph|-g)		shift
-			printf -v quotedScriptFilespec %q "${BASH_SOURCE[0]}"
-			quotedRepeatArgs=; if [ $# -gt 0 ]; then printf -v quotedRepeatArgs ' %q' "$@"; fi
-			forever --command "repeat${quotedRepeatArgs} --count ${COLUMNS:-80} --command '$quotedScriptFilespec -%'; printf \\\\e[1G\\\\n" | \
-			    spark --min 0 --max 100
-			exit $?
-			;;
-    --statistics|-s)	shift
-			printf -v quotedScriptFilespec %q "${BASH_SOURCE[0]}"
-			sameScreenPosition --first
-			STATISTICS_PRECISION=0 exec repeat "$@" --command "$quotedScriptFilespec -% | withConcatenatedInput --id wlanstrength-$$ | sameScreenPosition --subsequent -- statistics"
-			;;
 esac
-
+[ $# -eq 0 ] || handleSomethingGraphedOrStatisticed "$@"
 
 if type -t iwconfig >/dev/null; then
     LC_ALL=C iwconfig 2>/dev/null | "${iwconfigExtractor[@]}"
