@@ -6,7 +6,7 @@ printUsage()
 Print information about the WLAN link quality.
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-%|--percentage] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-%|--percentage|-c|--continuous] [-p|--pause|-e|--every P[SUFFIX][ADJUSTMENT]] [-?|-h|--help]'
 }
 
 typeset -a iwconfigExtractor=(grep --fixed-strings 'Link Quality')
@@ -16,6 +16,13 @@ case "$1" in
     --percentage|-%)	shift
 			iwconfigExtractor=(sed -n -e 's#^.*Link Quality=\([[:digit:]]\+/[[:digit:]]\+\)[[:space:]].*$#echo 100*\1 | bc#' -e T -e e -e p)
 			wirelessExtractorProgram='NR==3 {printf("%.0f\n",$3*10/7)}'
+			;;
+    --continuous|-c)	shift
+			printf -v quotedScriptFilespec %q "${BASH_SOURCE[0]}"
+			quotedRepeatArgs=; if [ $# -gt 0 ]; then printf -v quotedRepeatArgs ' %q' "$@"; fi
+			forever --command "repeat${quotedRepeatArgs} --count ${COLUMNS:-80} --command '$quotedScriptFilespec -%'; printf \\\\e[1G\\\\n" | \
+			    spark --min 0 --max 100
+			exit $?
 			;;
 esac
 
