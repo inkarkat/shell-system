@@ -6,7 +6,7 @@
 
 # Source: https://askubuntu.com/a/584692/72217
 readonly pythonHeader='
-import sys
+import os, sys
 MIN_PYTHON = (3, 0)
 assert sys.version_info >= MIN_PYTHON, "requires Python " + ".".join([str(n) for n in MIN_PYTHON]) + " or newer"
 
@@ -23,7 +23,7 @@ if Gtk.get_major_version() == 3 and Gtk.get_minor_version() >= 22:
 else:
     screen = Gdk.Screen.get_default()
     geo = screen.get_monitor_geometry(screen.get_primary_monitor())
-print(geo.width, " ", geo.height)
+print(geo.width, geo.height, sep = os.environ.get("DISPLAYRESOLUTION_SEPARATOR"))
 '
 readonly pythonEach="$pythonHeader"'
 display = Gdk.Display.get_default()
@@ -31,7 +31,7 @@ n_monitors = display.get_n_monitors()
 for m in range(n_monitors):
   monitor = display.get_monitor(m)
   geometry = monitor.get_geometry()
-  print(geometry.width, " ", geometry.height)
+  print(geometry.width, geometry.height, sep = os.environ.get("DISPLAYRESOLUTION_SEPARATOR"))
 '
 readonly pythonAll="$pythonHeader"'
 require_version("Gtk", "3.0")
@@ -47,10 +47,10 @@ if Gtk.get_major_version() == 3 and Gtk.get_minor_version() >= 22:
   x1 = max(r.x + r.width  for r in mon_geoms)
   y1 = max(r.y + r.height for r in mon_geoms)
 
-  print(x1 - x0, " ", y1 - y0)
+  print(x1 - x0, y1 - y0, sep = os.environ.get("DISPLAYRESOLUTION_SEPARATOR"))
 else:
   screen = Gdk.Screen.get_default()
-  print(screen.get_width(), " ", screen.get_height())
+  print(screen.get_width(), screen.get_height(), sep = os.environ.get("DISPLAYRESOLUTION_SEPARATOR"))
 '
 
 printUsage()
@@ -60,7 +60,9 @@ Get the display resolution of the entire (multi-monitor) display / the primary
 display / each monitor.
 HELPTEXT
     echo
-    printf "Usage: < <(%q %s) IFS=' ' read -r xres yres\\n" "$(basename "$1")" '[--primary|--each] [-?|-h|--help]'
+    printf 'Usage: [DISPLAYRESOLUTION_SEPARATOR=STRING] %q %s\n' "$(basename "$1")" '[--primary|--each] [-?|-h|--help]'
+    echo
+    printf "Usage: < <(%q %s) IFS=' ' read -r xres yres\\n" "$(basename "$1")" '[...]'
 }
 pythonProgram="$pythonAll"
 case "$1" in
