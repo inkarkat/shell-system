@@ -1,0 +1,17 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Test whether any keyboard is currently connected to the system.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-p|--print] [-?|-h|--help]'
+}
+typeset -a grepArgs=(--quiet)
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --print|-p)		shift; grepArgs=();;
+esac
+
+exec grep "${grepArgs[@]}" -i keyboard /sys/class/input/*/name 2>/dev/null
