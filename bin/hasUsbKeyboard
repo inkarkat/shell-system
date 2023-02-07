@@ -1,0 +1,38 @@
+#!/bin/bash
+# Source: https://serverfault.com/a/126317/107811
+
+printUsage()
+{
+    cat <<HELPTEXT
+Test whether a USB keyboard is currently connected to the system.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-p|--print] [-?|-h|--help]'
+}
+isPrint=
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --print|-p)		shift; isPrint=t;;
+esac
+
+lsusb --verbose 2>/dev/null \
+    | awk \
+	-v "isPrint=$isPrint" \
+'
+$1 == "Bus" { device = $0; }
+$1 == "bInterfaceClass" { isHumanInterfaceDevice = ($2 == 3); }
+$1 == "bInterfaceProtocol" {
+    isKeyboard = ($2 == 1)
+    if (device != "" && isHumanInterfaceDevice && isKeyboard) {
+	hasKeyboard = 1
+	if (isPrint) print device
+
+	device = ""
+	isHumanInterfaceDevice = 0
+	isKeyboard = 0
+    }
+}
+END {
+    if (! hasKeyboard) exit 1
+}
+'
