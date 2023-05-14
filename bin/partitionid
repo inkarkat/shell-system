@@ -1,0 +1,60 @@
+#!/bin/bash
+# Source: https://unix.stackexchange.com/a/12859/18876
+
+# Usage: [DEBUG=sudo[!]]
+# sudo also prints it, sudo! just prints and skips execution
+: ${SUDO:=sudo}; [ $EUID -eq 0 ] && SUDO=''
+case ",${DEBUG:-}," in *,sudo,*) SUDO="verbose $SUDO";; *,sudo\!,*) SUDO="echotrace $SUDO";; esac
+
+printUsage()
+{
+    cat <<HELPTEXT
+Print partition UUID of DEVICE.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '--get DEVICE [-?|-h|--help]'
+    echo
+    cat <<HELPTEXT
+Change the partition UUID of DEVICE to a random ID / VALUE.
+HELPTEXT
+    echo
+    printf 'Usage: [DEBUG=sudo[!]] %q %s\n' "$(basename "$1")" '--set DEVICE [VALUE]'
+}
+action=invocationError
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --get)		shift; action=printId;;
+    --set)		shift; action=updateId;;
+esac
+
+invocationError()
+{
+    printUsage "$0" >&2
+    exit 2
+}
+
+printId()
+{
+    if [ $# -ne 1 ]; then
+	printUsage "$0" >&2
+	exit 2
+    fi
+    exec lsblk --nodeps --noheadings -o UUID "$1"
+}
+
+updateId()
+{
+    if [ $# -gt 2 ]; then
+	printUsage "$0" >&2
+	exit 2
+    fi
+    local device="${1:?}"; shift
+    local value="${1:-random}"; shift
+
+    # tune2fs requires a freshly checked filesystem.
+    $SUDO e2fsck -f "$device" || return $?
+
+    $SUDO tune2fs -U "$value" "$device" || return $?
+}
+
+$action "$@"
