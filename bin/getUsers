@@ -1,0 +1,53 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Print the user name(s) (or passed tab-separated attribute(s)) of actual user(s)
+set up on the system.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[login|uid|gid|name|home-directory|command-interpreter ...] [-?|-h|--help]'
+}
+
+typeset -A userAttributes=(
+    [login]=0
+    [uid]=2
+    [gid]=3
+    [name]=4
+    [home-directory]=5
+    [command-interpreter]=6
+)
+
+typeset -a selectedFields=()
+while [ $# -ne 0 ]
+do
+    case "$1" in
+	--help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+	--)		shift; break;;
+	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
+	*)		if contains "$1" "${!userAttributes[@]}"; then
+			    selectedFields+=("${userAttributes["$1"]}")
+			    shift
+			else
+			    printUsage "$0" >&2
+			    exit 2
+			fi
+			;;
+    esac
+done
+
+while IFS=: read -r -a fields
+do
+    uid="${fields[${userAttributes[uid]}]}"
+    [ $uid -ge 1000 ] || continue
+    homeDir="${fields[${userAttributes[home-directory]}]}"
+    [ -d "$homeDir" ] || continue
+
+    typeset -a values=()
+    for f in "${selectedFields[@]:-0}"
+    do
+	values+=("${fields[$f]}")
+    done
+    IFS=$'\t'; printf '%s\n' "${values[*]}"
+done < <(getent passwd)
