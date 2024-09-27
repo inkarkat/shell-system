@@ -37,10 +37,13 @@ do
     esac
 done
 
+FIRST_UID=$(nanoDB --basedir /etc --table adduser.conf --query FIRST_UID 2>/dev/null)
+LAST_UID=$(nanoDB --basedir /etc --table adduser.conf --query LAST_UID 2>/dev/null)
+
 while IFS=: read -r -a fields
 do
     uid="${fields[${userAttributes[uid]}]}"
-    [ $uid -ge 1000 ] || continue
+    [ $uid -ge ${FIRST_UID:-1000} -a $uid -le ${LAST_UID:-59999} ] || continue
     homeDir="${fields[${userAttributes[home-directory]}]}"
     [ -d "$homeDir" ] || continue
 
