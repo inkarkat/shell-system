@@ -7,7 +7,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" "[-v|--verbose] [--via $(printf '%s\n' "${availableDetectors[@]/#detectVia_/}" | joinBy - '|') [--via ...]] [-?|-h|--help]"
+    printf 'Usage: %q %s\n' "$(basename "$1")" "[--dev-system|-v|--verbose] [--via $(printf '%s\n' "${availableDetectors[@]/#detectVia_/}" | joinBy - '|') [--via ...]] [-?|-h|--help]"
 }
 printUsage()
 {
@@ -27,6 +27,8 @@ HELPDESCRIPTION
     printShortUsage "$1"
     echo
     cat <<HELPTEXT
+    --dev-system	Check for virtualization technology used on development
+			systems (i.e. VirtualBox).
     --verbose|-v	Also print the detected virtualization technology.
 			Note: The values depend on the tool used!
     --via TOOL		Select TOOL to use for detection.
@@ -76,10 +78,17 @@ fi
 typeset -a systemdDetectVirtQuietArg=(--quiet)
 evaluater=compareResult
 typeset -a detectors=()
+typeset -a previousArgs=()
 while [ $# -ne 0 ]
 do
+    previousArgs+=("$1")
     case "$1" in
 	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+	--dev-system)	shift
+			"${BASH_SOURCE[0]}" --verbose "${previousArgs[@]:0:$((${#previousArgs[@]}-1))}" "$@" \
+			    | grep --quiet --fixed-strings --line-regexp -e 'oracle' -e 'virtualbox'
+			exit $?
+			;;
 	--verbose|-v)	shift; systemdDetectVirtQuietArg=(); evaluater=printResult;;
 	--via)		shift; detectors+=("detectVia_${1:?}"); shift;;
 	--)		shift; break;;
