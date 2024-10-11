@@ -22,8 +22,6 @@ fi
 type -t systemd-detect-virt >/dev/null && \
     exec systemd-detect-virt --quiet
 
-dmesg --notime | grep --quiet 'Hypervisor detected' && exit 0
-
 if type -t imvirt >/dev/null; then
     # imvirt either prints "Physical" or the virtualization technology.
     # It does not necessarily need administrative rights.
@@ -40,5 +38,7 @@ if type -t virt-what >/dev/null; then
 	[ -n "$result" ] && exit 0 || exit 1
     fi
 fi
+
+{ dmesg --notime 2>/dev/null || $SUDO dmesg --notime 2>/dev/null; } | grep --quiet 'Hypervisor detected' && exit 0
 
 exit 3
