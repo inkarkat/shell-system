@@ -3,42 +3,82 @@
 # Source: https://unix.stackexchange.com/questions/3685/find-out-if-the-os-is-running-in-a-virtual-environment
 # Source: https://unix.stackexchange.com/questions/89714/easy-way-to-determine-the-virtualization-technology-of-a-linux-machine
 
+printShortUsage()
+{
+    # Note: short followed by long option; if the user knows the short one, she can
+    # skim the long one.
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-v|--verbose] [-?|-h|--help]'
+}
 printUsage()
 {
-    cat <<HELPTEXT
-Tests whether the current system is virtualized; i.e. inside a VM or container.
-HELPTEXT
-    echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+    # This is the short help when launched with no or incorrect arguments.
+    # It is printed to stderr to avoid accidental processing.
+    printShortUsage "$1" >&2
+    printf >&2 '\nTry %q --help for more information.\n' "$(basename "$1")"
 }
+printLongUsage()
+{
+    # This is the long "man page" when launched with the help argument.
+    # It is printed to stdout to allow paging with 'more'.
+    cat <<HELPDESCRIPTION
+Tests whether the current system is virtualized; i.e. inside a VM or container.
+HELPDESCRIPTION
+    echo
+    printShortUsage "$1"
+    echo
+    cat <<HELPTEXT
+    --verbose|-v	Also print the detected virtualization technology.
+			Note: The values depend on the tool used!
+HELPTEXT
+}
+
+typeset -a systemdDetectVirtQuietArg=(--quiet)
+evaluater=compareResult
 case "$1" in
-    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+    --verbose|-v)	shift; systemdDetectVirtQuietArg=(); evaluater=printResult;;
 esac
 if [ $# -ne 0 ]; then
     printUsage "$0" >&2
     exit 2
 fi
 
+compareResult()
+{
+    local result; if result="$(eval "$*" 2>/dev/null)"; then
+	[ -n "$result" ] && exit 0 || exit 1
+    fi
+}
+
+printResult()
+{
+    local result; if result="$(eval "$*" 2>/dev/null)"; then
+	if [ -n "$result" ]; then
+	    printf '%s\n' "$result"
+	    exit 0
+	else
+	    exit 1
+	fi
+    fi
+}
+
 type -t systemd-detect-virt >/dev/null && \
-    exec systemd-detect-virt --quiet
+    exec systemd-detect-virt "${systemdDetectVirtQuietArg[@]}"
 
 if type -t imvirt >/dev/null; then
     # imvirt either prints "Physical" or the virtualization technology.
     # It does not necessarily need administrative rights.
-    if result="$(imvirt)" && [ -n "$result" ]; then
-	[ "$result" = 'Physical' ] && exit 1 || exit 0
-    fi
+    $evaluater "imvirt | grep --invert-match --fixed-strings --line-regexp 'Physical'"
 fi
 
 SUDO=guiSudo; [ $EUID -eq 0 ] && SUDO=''
 
 if type -t virt-what >/dev/null; then
     # virt-what either prints nothing or virtualization information.
-    if result="$(memoizeCall --successful-only -- $SUDO virt-what)"; then
-	[ -n "$result" ] && exit 0 || exit 1
-    fi
+    $evaluater "memoizeCall --successful-only -- $SUDO virt-what"
 fi
 
-{ dmesg --notime 2>/dev/null || memoizeCall --successful-only -- $SUDO dmesg --notime 2>/dev/null; } | grep --quiet 'Hypervisor detected' && exit 0
+{ dmesg --notime 2>/dev/null || memoizeCall --successful-only -- $SUDO dmesg --notime 2>/dev/null; } \
+    | $evaluater "sed -ne 's/Hypervisor detected: \(.*\)/\1/p'"
 
 exit 3
