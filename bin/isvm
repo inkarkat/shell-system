@@ -34,11 +34,11 @@ SUDO=guiSudo; [ $EUID -eq 0 ] && SUDO=''
 
 if type -t virt-what >/dev/null; then
     # virt-what either prints nothing or virtualization information.
-    if result="$($SUDO virt-what)"; then
+    if result="$(memoizeCall --successful-only -- $SUDO virt-what)"; then
 	[ -n "$result" ] && exit 0 || exit 1
     fi
 fi
 
-{ dmesg --notime 2>/dev/null || $SUDO dmesg --notime 2>/dev/null; } | grep --quiet 'Hypervisor detected' && exit 0
+{ dmesg --notime 2>/dev/null || memoizeCall --successful-only -- $SUDO dmesg --notime 2>/dev/null; } | grep --quiet 'Hypervisor detected' && exit 0
 
 exit 3
