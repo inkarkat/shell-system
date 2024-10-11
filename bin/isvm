@@ -7,7 +7,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-v|--verbose] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" "[-v|--verbose] [--via $(printf '%s\n' "${availableDetectors[@]/#detectVia_/}" | joinBy - '|') [--via ...]] [-?|-h|--help]"
 }
 printUsage()
 {
@@ -29,15 +29,64 @@ HELPDESCRIPTION
     cat <<HELPTEXT
     --verbose|-v	Also print the detected virtualization technology.
 			Note: The values depend on the tool used!
+    --via TOOL		Select TOOL to use for detection.
 HELPTEXT
 }
 
+SUDO=guiSudo; [ $EUID -eq 0 ] && SUDO=''
+typeset -a availableDetectors=()
+
+if type -t systemd-detect-virt >/dev/null; then
+    detectVia_systemd()
+    {
+	exec systemd-detect-virt "${systemdDetectVirtQuietArg[@]}"
+    }
+    availableDetectors+=(detectVia_systemd)
+fi
+
+if type -t imvirt >/dev/null; then
+    detectVia_imvirt()
+    {
+	# imvirt either prints "Physical" or the virtualization technology.
+	# It does not necessarily need administrative rights.
+	$evaluater "imvirt | grep --invert-match --fixed-strings --line-regexp 'Physical'"
+    }
+    availableDetectors+=(detectVia_imvirt)
+fi
+
+if type -t virt-what >/dev/null; then
+    detectVia_virtwhat()
+    {
+	# virt-what either prints nothing or virtualization information.
+	$evaluater "memoizeCall --successful-only -- $SUDO virt-what"
+    }
+    availableDetectors+=(detectVia_virtwhat)
+fi
+
+if type -t dmesg >/dev/null; then
+    detectVia_dmesg()
+    {
+	shopt -qs lastpipe
+	{ dmesg --notime 2>/dev/null || memoizeCall --successful-only -- $SUDO dmesg --notime 2>/dev/null; } \
+	    | $evaluater "sed -ne 's/Hypervisor detected: \(.*\)/\1/p'"
+    }
+    availableDetectors+=(detectVia_dmesg)
+fi
+
 typeset -a systemdDetectVirtQuietArg=(--quiet)
 evaluater=compareResult
-case "$1" in
-    --help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
-    --verbose|-v)	shift; systemdDetectVirtQuietArg=(); evaluater=printResult;;
-esac
+typeset -a detectors=()
+while [ $# -ne 0 ]
+do
+    case "$1" in
+	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+	--verbose|-v)	shift; systemdDetectVirtQuietArg=(); evaluater=printResult;;
+	--via)		shift; detectors+=("detectVia_${1:?}"); shift;;
+	--)		shift; break;;
+	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
+	*)		break;;
+    esac
+done
 if [ $# -ne 0 ]; then
     printUsage "$0" >&2
     exit 2
@@ -62,23 +111,9 @@ printResult()
     fi
 }
 
-type -t systemd-detect-virt >/dev/null && \
-    exec systemd-detect-virt "${systemdDetectVirtQuietArg[@]}"
-
-if type -t imvirt >/dev/null; then
-    # imvirt either prints "Physical" or the virtualization technology.
-    # It does not necessarily need administrative rights.
-    $evaluater "imvirt | grep --invert-match --fixed-strings --line-regexp 'Physical'"
-fi
-
-SUDO=guiSudo; [ $EUID -eq 0 ] && SUDO=''
-
-if type -t virt-what >/dev/null; then
-    # virt-what either prints nothing or virtualization information.
-    $evaluater "memoizeCall --successful-only -- $SUDO virt-what"
-fi
-
-{ dmesg --notime 2>/dev/null || memoizeCall --successful-only -- $SUDO dmesg --notime 2>/dev/null; } \
-    | $evaluater "sed -ne 's/Hypervisor detected: \(.*\)/\1/p'"
+for detector in "${detectors[@]:-${availableDetectors[@]}}"
+do
+    $detector
+done
 
 exit 3
