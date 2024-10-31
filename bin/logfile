@@ -21,7 +21,7 @@ printLongUsage()
     # This is the long "man page" when launched with the help argument.
     # It is printed to stdout to allow paging with 'more'.
     cat <<HELPDESCRIPTION
-Browse the LOGNAME (in ${LOGFILE_LOGDIR}) / LOGFILE.
+Browse the LOGNAME (in ${LOGFILE_LOGDIR}[/${USER}]) / LOGFILE.
 HELPDESCRIPTION
     echo
     printShortUsage "$1"
@@ -72,9 +72,10 @@ do
     if [[ "$arg" =~ / ]]; then
 	filespecs+=("$arg")
     else
-	candidate="${LOGFILE_LOGDIR}/${arg}"
-	add "${candidate}" \
-	    || add "${candidate}.log" \
+	add "${LOGFILE_LOGDIR}/${USER}/${arg}" \
+	    || add "${LOGFILE_LOGDIR}/${USER}/${arg}.log" \
+	    || add "${LOGFILE_LOGDIR}/${arg}" \
+	    || add "${LOGFILE_LOGDIR}/${arg}.log" \
 	    || { printf >&2 'ERROR: No such log file: %q\n' "$arg"; exit 1; }
     fi
 done
