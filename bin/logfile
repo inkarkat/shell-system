@@ -1,0 +1,87 @@
+#!/bin/bash
+shopt -qs nullglob
+
+: ${LOGFILE_LOGDIR:=/var/log}
+
+printShortUsage()
+{
+    # Note: short followed by long option; if the user knows the short one, they can
+    # skim the long one.
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-a|--all|-f|--follow] [--] LOGNAME|LOGFILE [...] [-?|-h|--help]'
+}
+printUsage()
+{
+    # This is the short help when launched with no or incorrect arguments.
+    # It is printed to stderr to avoid accidental processing.
+    printShortUsage "$1" >&2
+    printf >&2 '\nTry %q --help for more information.\n' "$(basename "$1")"
+}
+printLongUsage()
+{
+    # This is the long "man page" when launched with the help argument.
+    # It is printed to stdout to allow paging with 'more'.
+    cat <<HELPDESCRIPTION
+Browse the LOGNAME (in ${LOGFILE_LOGDIR}) / LOGFILE.
+HELPDESCRIPTION
+    echo
+    printShortUsage "$1"
+    echo
+    cat <<HELPTEXT
+    --all|-a		Include archived (compressed) previous logs.
+    --follow|-f		Append new output to the display as the log grows.
+HELPTEXT
+}
+
+typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS); [ -t 1 ] || pager=()
+typeset -a lister=()
+isGlob=
+while [ $# -ne 0 ]
+do
+    case "$1" in
+	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+	--all|-a)	shift; lister=(sortedFileArgs -rv zcat --force); isGlob=t;;
+	--follow|-f)	shift; lister=(tf);;
+	--)		shift; break;;
+	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
+	*)		break;;
+    esac
+done
+if [ $# -eq 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+typeset -a filespecs=()
+add()
+{
+    local candidate="${1:?}"; shift
+    if [ "$isGlob" ]; then
+	hasFile=
+	for file in "${candidate}"*
+	do
+	    filespecs+=("$file")
+	    hasFile=t
+	done
+	[ "$hasFile" ]
+    else
+	[ -e "$candidate" ] && filespecs+=("$candidate")
+    fi
+}
+for arg
+do
+    if [[ "$arg" =~ / ]]; then
+	filespecs+=("$arg")
+    else
+	candidate="${LOGFILE_LOGDIR}/${arg}"
+	add "${candidate}" \
+	    || add "${candidate}.log" \
+	    || { printf >&2 'ERROR: No such log file: %q\n' "$arg"; exit 1; }
+    fi
+done
+
+if [ ${#lister[@]} -eq 0 ]; then
+    exec "${pager[@]:-cat}" -- "${filespecs[@]}"
+else
+    eval '"${lister[@]}" -- "${filespecs[@]}"' \
+	"${pager:+|}" '"${pager[@]}"'
+fi
