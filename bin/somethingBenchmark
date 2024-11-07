@@ -275,7 +275,7 @@ getAverages()
 	datamashArgs+=(mean "$i")
     done
 
-    datamash "${datamashArgs[@]}"
+    datamash --round=1 "${datamashArgs[@]}"
 }
 
 benchmark()
