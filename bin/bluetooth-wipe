@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+shopt -qs nullglob
+
+printUsage()
+{
+    cat <<HELPTEXT
+Remove all Bluetooth devices and their pairing information from the system.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+[ $EUID -eq 0 ] || exec sudo --set-home "${BASH_SOURCE[0]}" "$@"
+
+systemctl stop bluetooth
+rm -rf /var/lib/bluetooth/*
+systemctl start bluetooth
