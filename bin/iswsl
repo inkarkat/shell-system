@@ -1,0 +1,48 @@
+#!/bin/bash
+
+printShortUsage()
+{
+    # Note: short followed by long option; if the user knows the short one, she can
+    # skim the long one.
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-v|--verbose] [-?|-h|--help]'
+}
+printUsage()
+{
+    # This is the short help when launched with no or incorrect arguments.
+    # It is printed to stderr to avoid accidental processing.
+    printShortUsage "$1" >&2
+    printf >&2 '\nTry %q --help for more information.\n' "$(basename "$1")"
+}
+printLongUsage()
+{
+    # This is the long "man page" when launched with the help argument.
+    # It is printed to stdout to allow paging with 'more'.
+    cat <<HELPDESCRIPTION
+Tests whether the current system is running under the Windows Subsystem for
+Linux (WSL).
+HELPDESCRIPTION
+    echo
+    printShortUsage "$1"
+    echo
+    cat <<HELPTEXT
+    --verbose|-v	Also print the name of the current distribution.
+HELPTEXT
+}
+
+action=:
+case "$1" in
+    --help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+    --verbose|-v)	shift; action=print;;
+esac
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+print()
+{
+    printf '%s\n' "${WSL_DISTRO_NAME:-undefined_distro}"
+}
+
+type -t wslinfo >/dev/null || exit 1
+$action
