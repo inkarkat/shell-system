@@ -21,7 +21,7 @@ fi
 < <(findmnt --notruncate --noheadings -o SOURCE,FSTYPE -T "${1:-.}") IFS=' ' read -r fsDevice fsType
 if [ -n "$fsDevice" ]; then
     if [ -z "${DISK_NAME+t}" ]; then
-	if fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice" | nonWhitespaceOutputOrError)" ||
+	if fsParentDevice="$(lsblk --noheadings --nodeps -o PKNAME "$fsDevice" | outputOrError --non-whitespace)" ||
 	    # XXX: lsblk from util-linux 2.23.2 on CentOS Linux release 7.6.1810
 	    # does not follow the parent of a /dev/mapper/centos-root device,
 	    # but correctly shows the hierarchy in its plain output. In
