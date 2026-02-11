@@ -44,7 +44,7 @@ print()
     printf '%s\n' "${WSL_DISTRO_NAME:-undefined_distro}"
 }
 
-[ -f /proc/sys/fs/binfmt_misc/WSLInterop ] \
+[ -f /proc/sys/fs/binfmt_misc/WSLInterop -o -f /proc/sys/fs/binfmt_misc/WSLInterop-late ] \
     && type -t wslinfo >/dev/null \
     || exit 1
 $action
