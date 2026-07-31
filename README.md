@@ -5,6 +5,7 @@ _Commands for querying system information._
 ### Dependencies
 
 * Bash, GNU `awk`, GNU `sed`
+* [inkarkat/shell-debugging](https://github.com/inkarkat/shell-debugging) for debugging (optional)
 
 ### Installation
 

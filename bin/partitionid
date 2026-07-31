@@ -1,10 +1,8 @@
 #!/bin/bash
 # Source: https://unix.stackexchange.com/a/12859/18876
 
-# Usage: [DEBUG=sudo[!]]
-# sudo also prints it, sudo! just prints and skips execution
 : ${SUDO:=sudo}; [ $EUID -eq 0 ] && SUDO=''
-case ",${DEBUG:-}," in *,sudo,*) SUDO="verbose $SUDO";; *,sudo\!,*) SUDO="echotrace $SUDO";; esac
+[ -n "$SUDO" -a -n "$DEBUG" ] && SUDO="debugcommand --for sudo -- $SUDO"
 
 printUsage()
 {
@@ -18,7 +16,7 @@ HELPTEXT
 Change the partition UUID of DEVICE to a random ID / VALUE.
 HELPTEXT
     echo
-    printf 'Usage: [DEBUG=sudo[!]] %q %s\n' "$(basename "$1")" '--set DEVICE [VALUE]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '--set DEVICE [VALUE]'
 }
 action=invocationError
 case "$1" in
